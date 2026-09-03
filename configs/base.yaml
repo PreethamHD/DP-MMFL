@@ -1,9 +1,34 @@
 project:
-  name: "DP-MMFL"
-  version: "0.1.0"
+  name: DP-MMFL
   seed: 42
 
-paths:
-  data_dir: "data"
-  checkpoint_dir: "checkpoints"
-  results_dir: "results"
+hardware:
+  device: auto
+
+data:
+  primary_dataset: chexpert_plus
+  external_dataset: iu_xray
+
+model:
+  multimodal: true
+
+federated:
+  enabled: false
+
+privacy:
+  enabled: false
+
+imbalance:
+  enabled: false
+
+fairness:
+  enabled: false
+
+robust_aggregation:
+  enabled: false
+
+communication_efficiency:
+  enabled: false
+
+explainability:
+  enabled: false
