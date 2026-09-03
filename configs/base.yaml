@@ -1,0 +1,9 @@
+project:
+  name: "DP-MMFL"
+  version: "0.1.0"
+  seed: 42
+
+paths:
+  data_dir: "data"
+  checkpoint_dir: "checkpoints"
+  results_dir: "results"
