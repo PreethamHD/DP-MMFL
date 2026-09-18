@@ -14,6 +14,7 @@ class CheXpertPlusMultimodalDataset(Dataset):
     """
     Multimodal PyTorch Dataset for CheXpert Plus.
     Streams frontal chest X-rays on-demand from Redivis and tokenizes clinical reports.
+    Converts unmentioned/NaN targets to 0.0 with mask=0.0 under the U-Ignore policy.
     """
 
     def __init__(
@@ -25,7 +26,7 @@ class CheXpertPlusMultimodalDataset(Dataset):
         split: Optional[str] = None,
     ):
         self.manifest = pd.read_parquet(manifest_path)
-        
+
         # Filter for frontal projections only
         self.manifest = self.manifest[
             self.manifest["frontal_lateral"] == "Frontal"
@@ -72,14 +73,24 @@ class CheXpertPlusMultimodalDataset(Dataset):
         input_ids = text_encoded["input_ids"].squeeze(0)
         attention_mask = text_encoded["attention_mask"].squeeze(0)
 
-        # 3. Extract 13 multi-label targets and U-Ignore masks
-        target_cols = [f"target_{col}" for col in TARGET_COLUMNS]
-        mask_cols = [f"mask_{col}" for col in TARGET_COLUMNS]
+        # 3. Target labels and U-Ignore masks (strict NaN -> 0.0 conversion)
+        labels = torch.tensor(
+            [
+                0.0 if pd.isna(row[f"target_{label}"])
+                else float(row[f"target_{label}"])
+                for label in TARGET_COLUMNS
+            ],
+            dtype=torch.float32,
+        )
+        label_mask = torch.tensor(
+            [
+                float(row[f"mask_{label}"])
+                for label in TARGET_COLUMNS
+            ],
+            dtype=torch.float32,
+        )
 
-        labels = torch.tensor(row[target_cols].to_numpy(dtype=float), dtype=torch.float32)
-        label_mask = torch.tensor(row[mask_cols].to_numpy(dtype=float), dtype=torch.float32)
-
-        # 4. Extract patient metadata
+        # 4. Patient metadata
         metadata = {
             "sample_id": row["sample_id"],
             "patient_id": row["deid_patient_id"],
